@@ -8,7 +8,8 @@ class SearchPage extends Component {
     this.state = {
         input: "",
         fixedData:[],
-        data: []
+        data: [],
+        favoriteList: []
     }
     this.getInput = this.getInput.bind(this)
   }
@@ -23,19 +24,26 @@ class SearchPage extends Component {
     return filteredData
   }
 
+  sortByRating(restaurants) {
+    return restaurants.sort((a, b) => a.rating - b.rating)
+  }
+
   getInput(e) {
-    this.setState({input: e.target.value, data: this.getFilteredData(e.target.value, this.state.data)})
+    this.setState({input: e.target.value, data: this.getFilteredData(e.target.value, this.state.fixedData)})
   }
 
   componentDidMount () {
     fetch("/auth/data")
     .then(res => res.json())
-    .then(data => this.setState({ fixedData: data, data }))
+    .then(data => {
+      const favoriteList = this.sortByRating(data.filter(restaurant => restaurant.favorite))
+      this.setState({ fixedData: this.sortByRating(data), data: favoriteList, favoriteList })
+    })
   }
 
   componentDidUpdate (prevProps, prevState) {
-    if (this.state.input.length < prevState.input.length) {
-      this.setState({ data: this.getFilteredData(this.state.input, this.state.fixedData) })
+    if (this.state.input.length < prevState.input.length && this.state.input.length === 0) {
+      this.setState({ data: this.state.favoriteList })
     }
   }
 
