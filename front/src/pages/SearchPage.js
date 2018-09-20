@@ -9,7 +9,8 @@ class SearchPage extends Component {
         input: "",
         fixedData:[],
         data: [],
-        favoriteList: []
+        favoriteList: [],
+        districts: []
     }
     this.getInput = this.getInput.bind(this)
   }
@@ -28,8 +29,26 @@ class SearchPage extends Component {
     return restaurants.sort((a, b) => a.rating - b.rating)
   }
 
+  getDistricts(restaurantsList) {
+    const districts = []
+    for (let restaurant of restaurantsList) {
+      if (districts.length < 20 && restaurant.district !== "8è" && restaurant.district && restaurant.district.length < 4 && !districts.includes(restaurant.district)) {
+        districts.push(restaurant.district)
+      }
+    }
+    const firstPart = districts.sort().splice(10, 1)
+    const lastPart = districts.splice(0, 11)
+    return firstPart.concat(districts).concat(lastPart)
+
+  }
+
   getInput(e) {
-    this.setState({input: e.target.value, data: this.getFilteredData(e.target.value, this.state.fixedData)})
+    if (e.target.value.length === 0) {
+      this.setState({ input: e.target.value, data: this.state.favoriteList })
+    }
+    else {
+      this.setState({ input: e.target.value, data: this.getFilteredData(e.target.value, this.state.fixedData) })
+    }
   }
 
   componentDidMount () {
@@ -37,14 +56,8 @@ class SearchPage extends Component {
     .then(res => res.json())
     .then(data => {
       const favoriteList = this.sortByRating(data.filter(restaurant => restaurant.favorite))
-      this.setState({ fixedData: this.sortByRating(data), data: favoriteList, favoriteList })
+      this.setState({ fixedData: this.sortByRating(data), data: favoriteList, favoriteList, districts: this.getDistricts(data) })
     })
-  }
-
-  componentDidUpdate (prevProps, prevState) {
-    if (this.state.input.length < prevState.input.length && this.state.input.length === 0) {
-      this.setState({ data: this.state.favoriteList })
-    }
   }
 
   render () {
@@ -52,6 +65,7 @@ class SearchPage extends Component {
       <div>
         <SearchBar
           getInput={this.getInput}
+          districts={this.state.districts}
         />
         <SearchResults
           data={this.state.data}
