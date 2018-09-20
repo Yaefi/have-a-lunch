@@ -29,7 +29,7 @@ class SearchPage extends Component {
   }
 
   sortByRating(restaurants) {
-    return restaurants.sort((a, b) => a.rating - b.rating)
+    return restaurants.sort((a, b) => b.rating - a.rating)
   }
 
   getDistricts(restaurantsList) {
