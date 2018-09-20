@@ -15,13 +15,16 @@ class SearchPage extends Component {
     this.getInput = this.getInput.bind(this)
   }
 
-  getFilteredData(input, data) {
+  getFilteredData(input, data, district) {
     const regex = new RegExp(input, 'i')
-     const filteredData = data
+    let filteredData = data
       .filter(restaurant => restaurant.name.match(regex)
         || restaurant.address.match(regex)
         || restaurant.primary_categorisation.match(regex)
         || (restaurant.secondary_categorisation && restaurant.secondary_categorisation.match(regex)))
+    if (district && district.length <= 3) {
+      filteredData = filteredData.filter(restaurant => restaurant.district === district)
+    }
     return filteredData
   }
 
@@ -32,18 +35,24 @@ class SearchPage extends Component {
   getDistricts(restaurantsList) {
     const districts = []
     for (let restaurant of restaurantsList) {
-      if (districts.length < 20 && restaurant.district !== "8è" && restaurant.district && restaurant.district.length < 4 && !districts.includes(restaurant.district)) {
+      if (districts.length < 20
+            && restaurant.district !== "8è"
+            && restaurant.district
+            && restaurant.district.length < 4
+            && !districts.includes(restaurant.district)) {
         districts.push(restaurant.district)
       }
     }
     const firstPart = districts.sort().splice(10, 1)
     const lastPart = districts.splice(0, 11)
     return firstPart.concat(districts).concat(lastPart)
-
   }
 
-  getInput(e) {
-    if (e.target.value.length === 0) {
+  getInput(e, district) {
+    if (district) {
+      this.setState({ data: this.getFilteredData(this.state.input, this.state.fixedData, e.target.value) })
+    }
+    else if (e.target.value.length === 0) {
       this.setState({ input: e.target.value, data: this.state.favoriteList })
     }
     else {

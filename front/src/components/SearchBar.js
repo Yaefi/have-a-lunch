@@ -6,9 +6,9 @@ class SearchBar extends Component {
       <div>
         <form>
           <input onChange={this.props.getInput}/>
-          <select>
+          <select onChange={(e) => this.props.getInput(e, "yes")}>
             <option>Choisir un arrondissement</option>
-             {this.props.districts.map(district => <option>{district}</option>)}
+             {this.props.districts.map((district, k) => <option key={k}>{district}</option>)}
           </select>
         </form>
       </div>
