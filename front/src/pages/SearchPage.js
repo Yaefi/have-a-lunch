@@ -44,6 +44,7 @@ class SearchPage extends Component {
     for (let restaurant of restaurantsList) {
       if (districts.length < 20
             && restaurant.district !== "8è"
+            && restaurant.district !== "11è"
             && restaurant.district
             && restaurant.district.length < 4
             && !districts.includes(restaurant.district)) {
@@ -51,8 +52,9 @@ class SearchPage extends Component {
       }
     }
     const firstPart = districts.sort().splice(10, 1)
-    const lastPart = districts.splice(0, 11)
-    return firstPart.concat(districts).concat(lastPart)
+    const lastPart = districts.splice(10, 1)
+    const secondPart = districts.splice(10, 8)
+    return firstPart.concat(secondPart).concat(districts).concat(lastPart)
   }
 
   getInput(e, district) {
