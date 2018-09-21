@@ -10,7 +10,8 @@ class SearchPage extends Component {
         fixedData:[],
         data: [],
         favoriteList: [],
-        districts: []
+        districts: [],
+        prevInput: ""
     }
     this.getInput = this.getInput.bind(this)
   }
@@ -53,10 +54,41 @@ class SearchPage extends Component {
       this.setState({ data: this.getFilteredData(this.state.input, this.state.fixedData, e.target.value) })
     }
     else if (e.target.value.length === 0) {
-      this.setState({ input: e.target.value, data: this.state.favoriteList })
+      this.setState({ prevInput: "", input: e.target.value, data: this.state.favoriteList })
     }
     else {
-      this.setState({ input: e.target.value, data: this.getFilteredData(e.target.value, this.state.fixedData) })
+      let newLetter = e.target.value.charAt(e.target.value.length - 1)
+      const regexA = new RegExp('[aáàâä]','i')
+      const regexE = new RegExp('[eéèêë]','i')
+      const regexI = new RegExp('[iíìîï]','i')
+      const regexO = new RegExp('[oóòôö]', 'i')
+      const regexU = new RegExp('[uúùûü]', 'i')
+      if (newLetter.match(regexA)) {
+        newLetter = '[aáàâä]'
+      }
+      if (newLetter.match(regexE)) {
+        newLetter = '[eéèêë]'
+      }
+      if (newLetter.match(regexI)) {
+        newLetter = '[iíìîï]'
+      }
+      if (newLetter.match(regexO)) {
+        newLetter = '[oóòôö]'
+      }
+      if (newLetter.match(regexU)) {
+        newLetter = '[uúùûü]'
+      }
+      let modifiedInput = this.state.input
+      if (e.target.value.length < this.state.prevInput.length && this.state.input.endsWith("]")) {
+        modifiedInput = modifiedInput.slice(0, modifiedInput.length - 7)
+      }
+      else if (e.target.value.length < this.state.prevInput.length) {
+        modifiedInput = modifiedInput.slice(0, modifiedInput.length - 1)
+      }
+      else {
+        modifiedInput = this.state.input.concat(newLetter)
+      }
+      this.setState({ prevInput: e.target.value, input: modifiedInput, data: this.getFilteredData(e.target.value, this.state.fixedData) })
     }
   }
 
