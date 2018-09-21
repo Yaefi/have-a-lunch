@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import SearchBar from '../components/SearchBar'
 import SearchResults from '../components/SearchResults'
+import Pagination from '../components/Pagination'
 
 class SearchPage extends Component {
   constructor (props) {
@@ -11,9 +12,13 @@ class SearchPage extends Component {
         data: [],
         favoriteList: [],
         districts: [],
-        prevInput: ""
+        prevInput: "",
+        slice: 0,
+        currentPage: "",
+        totalPages: ""
     }
     this.getInput = this.getInput.bind(this)
+    this.getPage = this.getPage.bind(this)
   }
 
   getFilteredData(input, data, district) {
@@ -26,6 +31,7 @@ class SearchPage extends Component {
     if (district && district.length <= 3) {
       filteredData = filteredData.filter(restaurant => restaurant.district === district)
     }
+    this.setState({ currentPage: 1, slice: 0, totalPages: Math.ceil(filteredData.length / 6) })
     return filteredData
   }
 
@@ -53,8 +59,8 @@ class SearchPage extends Component {
     if (district) {
       this.setState({ data: this.getFilteredData(this.state.input, this.state.fixedData, e.target.value) })
     }
-    else if (e.target.value.length === 0) {
-      this.setState({ prevInput: "", input: e.target.value, data: this.state.favoriteList })
+    else if (!e.target.value.length) {
+      this.setState({ prevInput: "", input: e.target.value, data: this.state.favoriteList, slice: 0, currentPage: 1}, () => this.setState({ totalPages: Math.ceil(this.state.data.length / 6) }))
     }
     else {
       let newLetter = e.target.value.charAt(e.target.value.length - 1)
@@ -88,8 +94,12 @@ class SearchPage extends Component {
       else {
         modifiedInput = this.state.input.concat(newLetter)
       }
-      this.setState({ prevInput: e.target.value, input: modifiedInput, data: this.getFilteredData(e.target.value, this.state.fixedData) })
+      this.setState({ prevInput: e.target.value, input: modifiedInput }, () => this.setState({ data: this.getFilteredData(this.state.input, this.state.fixedData) }))
     }
+  }
+
+  getPage(number) {
+    this.setState({ slice: this.state.slice + (number * 6), currentPage: this.state.currentPage + number })
   }
 
   componentDidMount () {
@@ -97,7 +107,7 @@ class SearchPage extends Component {
     .then(res => res.json())
     .then(data => {
       const favoriteList = this.sortByRating(data.filter(restaurant => restaurant.favorite))
-      this.setState({ fixedData: this.sortByRating(data), data: favoriteList, favoriteList, districts: this.getDistricts(data) })
+      this.setState({ fixedData: this.sortByRating(data), data: favoriteList, favoriteList, districts: this.getDistricts(data), currentPage: 1 }, () => this.setState({ totalPages: Math.ceil(this.state.data.length / 6) }))
     })
   }
 
@@ -110,6 +120,12 @@ class SearchPage extends Component {
         />
         <SearchResults
           data={this.state.data}
+          slice={this.state.slice}
+        />
+        <Pagination
+          getPage={this.getPage}
+          currentPage={this.state.currentPage}
+          totalPages={this.state.totalPages}
         />
       </div>
     )

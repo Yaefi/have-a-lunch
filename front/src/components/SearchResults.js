@@ -7,7 +7,7 @@ class SearchResults extends Component {
       <div>
         { this.props.data.length
           ? <div className="containerRestaurantCards">
-              {this.props.data.slice(0, 6).map((restaurant, k) => <RestaurantCard key={k} restaurant={restaurant} />)}
+              {this.props.data.slice(this.props.slice, this.props.slice + 6).map((restaurant, k) => <RestaurantCard key={k} restaurant={restaurant} />)}
           </div>
           : "No matches" }
       </div>

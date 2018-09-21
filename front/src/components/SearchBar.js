@@ -3,7 +3,7 @@ import React, { Component } from 'react'
 class SearchBar extends Component {
   render () {
     return (
-      <div>
+      <div className="searchBar">
         <form>
           <input onChange={this.props.getInput}/>
           <select onChange={(e) => this.props.getInput(e, "yes")}>

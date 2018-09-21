@@ -37,3 +37,14 @@
   height: 100%;
   border-radius: 0 10px 10px 0;
 }
+
+.pagination {
+  display: flex;
+  margin-top: 4vh;
+  justify-content: space-around;
+}
+
+.searchBar {
+  display: flex;
+  justify-content: center;
+}
