@@ -7,32 +7,19 @@ class SearchPage extends Component {
   constructor (props) {
     super (props)
     this.state = {
-        input: "",
-        fixedData:[],
-        data: [],
+        rawData:[],
+        displayedData: [],
         favoriteList: [],
-        districts: [],
-        prevInput: "",
+        splittedKeyword: [],
+        district: "",
+        districtsList: [],
         slice: 0,
-        currentPage: "",
+        currentPage: 1,
         totalPages: ""
     }
-    this.getInput = this.getInput.bind(this)
+    this.getDisplayedData = this.getDisplayedData.bind(this)
     this.getPage = this.getPage.bind(this)
-  }
-
-  getFilteredData(input, data, district) {
-    const regex = new RegExp(input, 'i')
-    let filteredData = data
-      .filter(restaurant => restaurant.name.match(regex)
-        || restaurant.address.match(regex)
-        || restaurant.primary_categorisation.match(regex)
-        || (restaurant.secondary_categorisation && restaurant.secondary_categorisation.match(regex)))
-    if (district && district.length <= 3) {
-      filteredData = filteredData.filter(restaurant => restaurant.district === district)
-    }
-    this.setState({ currentPage: 1, slice: 0, totalPages: Math.ceil(filteredData.length / 6) })
-    return filteredData
+    this.getInput = this.getInput.bind(this)
   }
 
   sortByRating(restaurants) {
@@ -40,68 +27,112 @@ class SearchPage extends Component {
   }
 
   getDistricts(restaurantsList) {
-    const districts = []
+    const districtsList = []
     for (let restaurant of restaurantsList) {
-      if (districts.length < 20
+      if (districtsList.length < 20
             && restaurant.district !== "8è"
             && restaurant.district !== "11è"
             && restaurant.district
             && restaurant.district.length < 4
-            && !districts.includes(restaurant.district)) {
-        districts.push(restaurant.district)
+            && !districtsList.includes(restaurant.district)) {
+        districtsList.push(restaurant.district)
       }
     }
-    const firstPart = districts.sort().splice(10, 1)
-    const lastPart = districts.splice(10, 1)
-    const secondPart = districts.splice(10, 8)
-    return firstPart.concat(secondPart).concat(districts).concat(lastPart)
+    const firstPart = districtsList.sort().splice(10, 1)
+    const lastPart = districtsList.splice(10, 1)
+    const secondPart = districtsList.splice(10, 8)
+    return firstPart.concat(secondPart, districtsList, lastPart)
+  }
+
+  getDisplayedData(keyword, district) {
+    let displayedData
+    if (!keyword.length && !district.length) {
+      displayedData = this.state.favoriteList
+      this.setState({ displayedData })
+      this.getPage(displayedData)
+    }
+    else {
+      displayedData = this.state.rawData
+      if (keyword.length) {
+        const regex = new RegExp(keyword, 'i')
+        displayedData = displayedData.filter(restaurant => restaurant.name.match(regex)
+          || restaurant.address.match(regex)
+          || restaurant.primary_categorisation.match(regex)
+          || (restaurant.secondary_categorisation && restaurant.secondary_categorisation.match(regex))
+        )
+      }
+      if (district.length) {
+        displayedData = displayedData.filter(restaurant => restaurant.district === district)
+      }
+    }
+    this.setState({ displayedData })
+    this.getPage(displayedData)
+  }
+
+  getPage(value) {
+    if (Number.isInteger(value)) {
+      this.setState({ slice: this.state.slice + (value * 6), currentPage: this.state.currentPage + value })
+    }
+    else {
+      this.setState({ slice: 0, currentPage: 1, totalPages: Math.ceil(value.length / 6) })
+    }
   }
 
   getInput(e, district) {
     if (district) {
-      this.setState({ data: this.getFilteredData(this.state.input, this.state.fixedData, e.target.value) })
-    }
-    else if (!e.target.value.length) {
-      this.setState({ prevInput: "", input: e.target.value, data: this.state.favoriteList, slice: 0, currentPage: 1}, () => this.setState({ totalPages: Math.ceil(this.state.data.length / 6) }))
+      this.setState({ district: e.target.value })
+      this.getDisplayedData(this.state.splittedKeyword.join(""), e.target.value)
     }
     else {
-      let newLetter = e.target.value.charAt(e.target.value.length - 1)
-      const regexA = new RegExp('[aáàâä]','i')
-      const regexE = new RegExp('[eéèêë]','i')
-      const regexI = new RegExp('[iíìîï]','i')
-      const regexO = new RegExp('[oóòôö]', 'i')
-      const regexU = new RegExp('[uúùûü]', 'i')
-      if (newLetter.match(regexA)) {
-        newLetter = '[aáàâä]'
-      }
-      if (newLetter.match(regexE)) {
-        newLetter = '[eéèêë]'
-      }
-      if (newLetter.match(regexI)) {
-        newLetter = '[iíìîï]'
-      }
-      if (newLetter.match(regexO)) {
-        newLetter = '[oóòôö]'
-      }
-      if (newLetter.match(regexU)) {
-        newLetter = '[uúùûü]'
-      }
-      let modifiedInput = this.state.input
-      if (e.target.value.length < this.state.prevInput.length && this.state.input.endsWith("]")) {
-        modifiedInput = modifiedInput.slice(0, modifiedInput.length - 7)
-      }
-      else if (e.target.value.length < this.state.prevInput.length) {
-        modifiedInput = modifiedInput.slice(0, modifiedInput.length - 1)
+      let splittedKeyword = this.state.splittedKeyword
+      const differenceIndex = this.getDifferenceIndex(e.target.value, splittedKeyword)
+      if (e.target.value.length < splittedKeyword.length) {
+        splittedKeyword.splice(differenceIndex, 1)
+        this.setState({ splittedKeyword })
+        this.getDisplayedData(splittedKeyword.join(""), this.state.district)
       }
       else {
-        modifiedInput = this.state.input.concat(newLetter)
+        splittedKeyword.splice(differenceIndex, 0, this.checkRegex(e.target.value[differenceIndex]))
+        this.setState({ splittedKeyword })
+        this.getDisplayedData(splittedKeyword.join(""), this.state.district)
       }
-      this.setState({ prevInput: e.target.value, input: modifiedInput }, () => this.setState({ data: this.getFilteredData(this.state.input, this.state.fixedData) }))
     }
   }
 
-  getPage(number) {
-    this.setState({ slice: this.state.slice + (number * 6), currentPage: this.state.currentPage + number })
+  getDifferenceIndex(newKeyword, splittedKeyword) {
+    const splittedNewKeyword = []
+    for (let letter of newKeyword) {
+      splittedNewKeyword.push(this.checkRegex(letter))
+    }
+    for (let i = 0; i < splittedKeyword.length || i < splittedNewKeyword.length; i++) {
+      if ( splittedKeyword[i] !== splittedNewKeyword[i]) {
+        return i
+      }
+    }
+  }
+
+  checkRegex(letter) {
+    const regexA = new RegExp('[aáàâä]', 'i')
+    const regexE = new RegExp('[eéèêë]', 'i')
+    const regexI = new RegExp('[iíìîï]', 'i')
+    const regexO = new RegExp('[oóòôö]', 'i')
+    const regexU = new RegExp('[uúùûü]', 'i')
+    if (letter.match(regexA)) {
+      letter = "[aáàâä]"
+    }
+    if (letter.match(regexE)) {
+      letter = "[eéèêë]"
+    }
+    if (letter.match(regexI)) {
+      letter = "[iíìîï]"
+    }
+    if (letter.match(regexO)) {
+      letter = "[oóòôö]"
+    }
+    if (letter.match(regexU)) {
+      letter = "[uúùûü]"
+    }
+    return letter
   }
 
   componentDidMount () {
@@ -109,7 +140,8 @@ class SearchPage extends Component {
     .then(res => res.json())
     .then(data => {
       const favoriteList = this.sortByRating(data.filter(restaurant => restaurant.favorite))
-      this.setState({ fixedData: this.sortByRating(data), data: favoriteList, favoriteList, districts: this.getDistricts(data), currentPage: 1 }, () => this.setState({ totalPages: Math.ceil(this.state.data.length / 6) }))
+      this.setState({ rawData: this.sortByRating(data), favoriteList, districtsList: this.getDistricts(data) })
+      this.getDisplayedData(this.state.splittedKeyword.join(""), this.state.district)
     })
   }
 
@@ -118,17 +150,19 @@ class SearchPage extends Component {
       <div>
         <SearchBar
           getInput={this.getInput}
-          districts={this.state.districts}
+          districtsList={this.state.districtsList}
         />
         <SearchResults
-          data={this.state.data}
+          displayedData={this.state.displayedData}
           slice={this.state.slice}
         />
-        <Pagination
-          getPage={this.getPage}
-          currentPage={this.state.currentPage}
-          totalPages={this.state.totalPages}
-        />
+        {this.state.totalPages !== 0
+          ? <Pagination
+              getPage={this.getPage}
+              currentPage={this.state.currentPage}
+              totalPages={this.state.totalPages}
+            />
+          : ""}
       </div>
     )
   }
